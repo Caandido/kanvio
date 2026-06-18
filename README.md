@@ -3,6 +3,8 @@
 Gerenciador de projetos estilo Kanban (inspirado no Trello), feito com
 **Next.js (App Router) + TypeScript + Tailwind + Prisma**.
 
+🌐 **Demo ao vivo:** https://kanvio-tau.vercel.app
+
 > 📖 Leia **[`PASSO-A-PASSO.txt`](./PASSO-A-PASSO.txt)** para a explicação
 > completa da arquitetura e de cada arquivo do código.
 
