@@ -10,6 +10,15 @@ projeto está organizado, o que cada arquivo faz, como rodar e como evoluir.
 
 Leia de cima para baixo na primeira vez. Depois use o ÍNDICE para navegar.
 
+  ┌──────────────────────────────────────────────────────────────────────┐
+  │ ATUALIZAÇÃO (v1.0.0): o projeto foi publicado no GitHub + Vercel e     │
+  │ passou a usar PostgreSQL (Neon) TANTO em dev quanto em produção.       │
+  │ Onde este documento disser "SQLite em dev", leia "PostgreSQL (Neon)".  │
+  │ O resto da arquitetura permanece igual — o Prisma abstrai o banco.     │
+  │ Para rodar: crie um banco Neon grátis e cole a URL em .env (DATABASE_  │
+  │ URL), depois "npm run db:push" e "npm run dev". Deploy: Vercel.        │
+  └──────────────────────────────────────────────────────────────────────┘
+
 
 --------------------------------------------------------------------------------
  ÍNDICE
