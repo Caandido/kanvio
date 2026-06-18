@@ -1,0 +1,88 @@
+// Prisma schema do Kanvio
+// Docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// PostgreSQL (Neon) — usado em produção (Vercel) e em desenvolvimento.
+// A connection string vem da variável DATABASE_URL (.env / painel da Vercel).
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  avatar    String?
+  createdAt DateTime @default(now())
+
+  workspaces Workspace[] @relation("WorkspaceOwner")
+  cards      Card[]      @relation("CardAuthor")
+  comments   Comment[]
+}
+
+model Workspace {
+  id        String   @id @default(cuid())
+  name      String
+  ownerId   String
+  createdAt DateTime @default(now())
+
+  owner  User    @relation("WorkspaceOwner", fields: [ownerId], references: [id])
+  boards Board[]
+}
+
+model Board {
+  id          String    @id @default(cuid())
+  title       String
+  workspaceId String
+  createdAt   DateTime  @default(now())
+  deletedAt   DateTime? // soft delete
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  columns   Column[]
+}
+
+model Column {
+  id        String    @id @default(cuid())
+  title     String
+  boardId   String
+  position  Int
+  deletedAt DateTime?
+
+  board Board  @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  cards Card[]
+
+  @@index([boardId])
+}
+
+model Card {
+  id          String    @id @default(cuid())
+  title       String
+  description String?
+  columnId    String
+  position    Int
+  dueDate     DateTime?
+  createdBy   String
+  createdAt   DateTime  @default(now())
+  deletedAt   DateTime?
+
+  column   Column    @relation(fields: [columnId], references: [id], onDelete: Cascade)
+  author   User      @relation("CardAuthor", fields: [createdBy], references: [id])
+  comments Comment[]
+
+  @@index([columnId])
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  cardId    String
+  userId    String
+  content   String
+  createdAt DateTime @default(now())
+
+  card Card @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id])
+}

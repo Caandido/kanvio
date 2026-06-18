@@ -1,0 +1,579 @@
+================================================================================
+ KANVIO — PASSO A PASSO COMPLETO (arquitetura + código explicado)
+================================================================================
+
+Sistema de gerenciamento de projetos estilo Kanban (inspirado no Trello),
+feito com Next.js (App Router) + TypeScript + Tailwind + Prisma.
+
+Este documento explica TUDO: por que cada tecnologia foi escolhida, como o
+projeto está organizado, o que cada arquivo faz, como rodar e como evoluir.
+
+Leia de cima para baixo na primeira vez. Depois use o ÍNDICE para navegar.
+
+
+--------------------------------------------------------------------------------
+ ÍNDICE
+--------------------------------------------------------------------------------
+ 0.  Resumo executivo (o que foi construído)
+ 1.  Pré-requisitos
+ 2.  Visão geral da arquitetura
+ 3.  A stack e o "porquê" de cada peça
+ 4.  Estrutura de pastas
+ 5.  Passo 1  — Configuração base do projeto
+ 6.  Passo 2  — Banco de dados com Prisma
+ 7.  Passo 3  — Camada de acesso a dados (services)
+ 8.  Passo 4  — Server Actions (mutações)
+ 9.  Passo 5  — Páginas (Server Components)
+ 10. Passo 6  — Drag-and-drop (Client Components + dnd-kit)
+ 11. Passo 7  — Estilo e tema (Tailwind v4)
+ 12. Como rodar o projeto (do zero)
+ 13. Como funciona, na prática, uma ação (fluxos completos)
+ 14. Decisões de projeto e trade-offs
+ 15. O que falta para o MVP completo (roadmap)
+ 16. Como migrar de SQLite para PostgreSQL / deploy
+ 17. Glossário rápido
+
+
+================================================================================
+ 0. RESUMO EXECUTIVO
+================================================================================
+
+O que já está FUNCIONANDO neste projeto:
+
+  • Listar quadros (boards) na home.
+  • Criar um novo quadro.
+  • Abrir um quadro e ver suas colunas e cartões.
+  • Criar coluna, renomear (duplo clique) e excluir.
+  • Criar cartão, editar (título/descrição) e excluir.
+  • ARRASTAR E SOLTAR cartões: reordenar dentro da coluna e mover entre
+    colunas, com persistência no banco.
+  • Excluir quadro (soft delete — não apaga de verdade).
+  • Tema claro/escuro automático (segue o sistema operacional).
+
+O que está PREPARADO mas ainda não ligado (explicado no Passo 15):
+
+  • Autenticação real (hoje usamos um usuário "demo" automático).
+  • Comentários, etiquetas, checklist, anexos, tempo real, notificações.
+
+Decisão importante para você conseguir rodar HOJE, sem instalar nada além do
+Node: o banco de desenvolvimento é SQLite (um único arquivo dev.db). Em
+produção troca-se para PostgreSQL mudando UMA linha (ver Passo 16).
+
+
+================================================================================
+ 1. PRÉ-REQUISITOS
+================================================================================
+
+  • Node.js 18+ (recomendado 20 ou 24). Verifique com:  node -v
+  • npm (vem com o Node). Verifique com:  npm -v
+  • Um editor (VS Code recomendado).
+
+Não é preciso instalar banco de dados: o SQLite é embutido via Prisma.
+
+
+================================================================================
+ 2. VISÃO GERAL DA ARQUITETURA
+================================================================================
+
+O Kanvio usa o modelo "full-stack em um só projeto" do Next.js App Router.
+Não há um backend separado: o mesmo projeto serve a interface E executa o
+código de servidor (acesso ao banco) através de Server Components e Server
+Actions.
+
+Fluxo em camadas (de baixo para cima):
+
+   ┌────────────────────────────────────────────────────────────┐
+   │  BANCO DE DADOS (SQLite em dev / PostgreSQL em prod)         │
+   └────────────────────────────────────────────────────────────┘
+                         ▲
+                         │  Prisma Client (ORM tipado)
+                         │
+   ┌────────────────────────────────────────────────────────────┐
+   │  SERVICES  (src/services/*.service.ts)                      │
+   │  Acesso a dados + regras de negócio. NÃO conhecem a UI.     │
+   └────────────────────────────────────────────────────────────┘
+                         ▲
+                         │  funções async simples
+                         │
+   ┌────────────────────────────────────────────────────────────┐
+   │  SERVER ACTIONS  (src/features/**/actions.ts, "use server") │
+   │  Mutações chamáveis do cliente. Revalidam o cache.          │
+   └────────────────────────────────────────────────────────────┘
+                         ▲
+            leitura ─────┤───── escrita
+                         │
+   ┌────────────────────────────────────────────────────────────┐
+   │  UI                                                         │
+   │  • Server Components (páginas) → leem via services          │
+   │  • Client Components (Kanban) → drag-and-drop + chamam      │
+   │    Server Actions para persistir                            │
+   └────────────────────────────────────────────────────────────┘
+
+Princípio central (vindo do CLAUDE.md): "Server Components por padrão, Client
+Components só quando necessário" e "nada de lógica de negócio dentro dos
+componentes". Por isso a lógica vive nos services.
+
+
+================================================================================
+ 3. A STACK E O "PORQUÊ" DE CADA PEÇA
+================================================================================
+
+  Next.js (App Router)
+     Framework React full-stack. O App Router permite Server Components
+     (renderizam no servidor, podem acessar o banco direto, mandam só HTML
+     para o cliente) e Server Actions (funções de servidor chamadas do
+     cliente sem você escrever uma rota de API à mão).
+
+  TypeScript (strict)
+     Tipagem estática. Pega erros antes de rodar. O Prisma gera tipos a partir
+     do schema, então o banco e o código ficam sempre em sincronia.
+
+  Tailwind CSS v4
+     CSS utilitário. Você estiliza com classes no JSX (ex.: "px-4 py-2").
+     A v4 dispensa o arquivo tailwind.config.js: basta @import "tailwindcss".
+
+  Prisma ORM
+     Mapeia tabelas do banco para objetos JS tipados. Você escreve o "schema"
+     uma vez; o Prisma gera o client e cuida do SQL.
+
+  @dnd-kit
+     Biblioteca de drag-and-drop para React, acessível e performática. Usamos
+     três pacotes: core (contexto/sensores), sortable (listas ordenáveis) e
+     utilities (helpers de CSS).
+
+  SQLite (dev) / PostgreSQL (prod)
+     SQLite = arquivo local, zero configuração, ótimo para desenvolver.
+     PostgreSQL = banco robusto para produção. O Prisma abstrai a diferença.
+
+
+================================================================================
+ 4. ESTRUTURA DE PASTAS
+================================================================================
+
+  Kanvio/
+  ├─ .env                      Variável DATABASE_URL (conexão do banco)
+  ├─ .env.example              Modelo do .env para outras pessoas
+  ├─ .gitignore                O que o Git deve ignorar (node_modules, dev.db…)
+  ├─ package.json              Dependências e scripts (dev, build, db:*)
+  ├─ tsconfig.json             Configuração do TypeScript (+ alias "@/")
+  ├─ next.config.ts            Configuração do Next.js
+  ├─ postcss.config.mjs        Plugin do Tailwind v4
+  ├─ prisma/
+  │  ├─ schema.prisma          MODELO DO BANCO (entidades e relações)
+  │  └─ seed.ts                Popula dados de exemplo
+  └─ src/
+     ├─ app/                   Rotas (App Router)
+     │  ├─ layout.tsx          Layout raiz (cabeçalho + <html>)
+     │  ├─ globals.css         Estilos globais + tema (variáveis CSS)
+     │  ├─ page.tsx            HOME: lista e cria quadros
+     │  ├─ not-found.tsx       Página 404
+     │  └─ board/[id]/page.tsx PÁGINA DO QUADRO (colunas + cartões)
+     ├─ components/            (reservado para UI genérica reutilizável)
+     ├─ features/             "Fatias" por funcionalidade
+     │  ├─ boards/actions.ts   Server Actions de quadros
+     │  └─ kanban/
+     │     ├─ actions.ts       Server Actions de colunas e cartões
+     │     ├─ KanbanBoard.tsx  Orquestra o drag-and-drop (client)
+     │     ├─ KanbanColumn.tsx Coluna + adicionar cartão (client)
+     │     └─ BoardCard.tsx    Cartão arrastável (client)
+     ├─ services/             Acesso a dados / regras de negócio
+     │  ├─ board.service.ts
+     │  ├─ column.service.ts
+     │  └─ card.service.ts
+     ├─ lib/                  Utilitários de infraestrutura
+     │  ├─ prisma.ts           Instância única do Prisma Client
+     │  └─ utils.ts            cn() e formatShortDate()
+     └─ types/                Tipos de domínio compartilhados
+        └─ index.ts
+
+
+================================================================================
+ 5. PASSO 1 — CONFIGURAÇÃO BASE DO PROJETO
+================================================================================
+
+Como o nome da pasta tem letra maiúscula ("Kanvio"), o create-next-app recusa
+(npm não aceita maiúsculas em nomes de pacote). Por isso o projeto foi montado
+manualmente — o que é ótimo para aprender, pois você vê cada arquivo.
+
+  package.json
+     - "name": "kanvio" (minúsculo, exigência do npm).
+     - scripts:
+         dev        → sobe o servidor de desenvolvimento (http://localhost:3000)
+         build/start→ build de produção e execução
+         db:push    → cria/atualiza as tabelas a partir do schema.prisma
+         db:seed    → roda prisma/seed.ts (dados de exemplo)
+         db:studio  → abre o Prisma Studio (UI visual do banco)
+         postinstall→ roda "prisma generate" após o npm install
+     - "prisma": { "seed": ... } → diz ao Prisma como rodar o seed.
+
+  tsconfig.json
+     - "strict": true → TypeScript rigoroso (exigência do CLAUDE.md).
+     - paths "@/*" → permite importar de "src" com "@/...":
+         import { prisma } from "@/lib/prisma"   // em vez de "../../lib/prisma"
+
+  next.config.ts / postcss.config.mjs / next-env.d.ts
+     - Configurações padrão. O postcss registra o plugin do Tailwind v4.
+
+  .gitignore
+     - Ignora node_modules, .next, .env e o arquivo do SQLite (prisma/*.db).
+
+
+================================================================================
+ 6. PASSO 2 — BANCO DE DADOS COM PRISMA
+================================================================================
+
+Arquivo: prisma/schema.prisma
+
+  datasource db {
+    provider = "sqlite"            // troque por "postgresql" em produção
+    url      = env("DATABASE_URL") // lido do .env
+  }
+
+As ENTIDADES (espelham o CLAUDE.md):
+
+  User       → usuário (id, name, email único, avatar?, createdAt)
+  Workspace  → área de trabalho de um dono (ownerId → User)
+  Board      → quadro dentro de um workspace (+ deletedAt p/ soft delete)
+  Column     → coluna/lista do Kanban (boardId, position)
+  Card       → cartão/tarefa (columnId, position, dueDate?, createdBy)
+  Comment    → comentário em um cartão (preparado p/ uso futuro)
+
+Conceitos importantes do schema:
+
+  • Relações: "board Board @relation(...)" cria a ligação entre tabelas.
+    O Prisma entende isso e permite buscas aninhadas (coluna com seus cartões).
+
+  • onDelete: Cascade: ao apagar um Board de verdade, suas Columns/Cards somem
+    junto. (No dia a dia usamos soft delete; o cascade é uma rede de segurança.)
+
+  • position (Int): define a ORDEM de colunas e cartões. É o que torna o
+    drag-and-drop persistente — guardamos 0,1,2,... e reescrevemos ao mover.
+
+  • deletedAt (DateTime?): "soft delete". Em vez de apagar a linha, gravamos a
+    data de exclusão. Todas as buscas filtram "where deletedAt = null". Isso
+    atende à regra do CLAUDE.md: "nenhum dado removido permanentemente sem
+    confirmação".
+
+  • @@index([boardId]) / @@index([columnId]): índices que aceleram as buscas
+    por relação (listar cartões de uma coluna, etc.).
+
+Para aplicar o schema ao banco, roda-se "npm run db:push". O Prisma cria o
+arquivo prisma/dev.db (SQLite) com todas as tabelas. "prisma generate" (no
+postinstall) cria o client tipado em node_modules/.prisma/client.
+
+
+================================================================================
+ 7. PASSO 3 — CAMADA DE ACESSO A DADOS (SERVICES)
+================================================================================
+
+Todos os acessos ao banco passam por src/services/*.service.ts. Vantagem:
+a UI nunca fala com o Prisma diretamente, então a lógica fica testável e
+reutilizável.
+
+  src/lib/prisma.ts
+     Cria UMA instância do PrismaClient e a reaproveita. Em desenvolvimento, o
+     Next.js recarrega o código a cada alteração; sem o "singleton" no objeto
+     global, cada reload abriria uma nova conexão até estourar o limite.
+
+  src/services/board.service.ts
+     - listBoards(): quadros não excluídos + contagem de colunas (para a home).
+     - getBoard(id): quadro COMPLETO — colunas ordenadas por position, cada uma
+       com seus cartões também ordenados. É uma única query aninhada do Prisma.
+     - createBoard / renameBoard / deleteBoard (soft delete).
+     - ensureDemoUser / ensureDemoWorkspace: como ainda não há login, criamos
+       (uma vez) um usuário e um workspace "demo" para tudo ter um dono. Quando
+       a autenticação entrar, troca-se esses helpers pelo usuário logado.
+
+  src/services/column.service.ts
+     - createColumn: calcula a próxima position (última + 1) e cria a coluna.
+     - renameColumn / deleteColumn (soft delete).
+
+  src/services/card.service.ts
+     - createCard: cria o cartão no fim da coluna (position = última + 1).
+     - updateCard / deleteCard (soft delete).
+     - reorderCards(columns): O CORAÇÃO DO DRAG-AND-DROP. Recebe, para cada
+       coluna afetada, a lista de IDs de cartões já na ordem final. Dentro de
+       uma TRANSAÇÃO (tudo-ou-nada), reescreve columnId + position de cada
+       cartão usando o índice (0,1,2,...). Assim as posições nunca ficam com
+       "buracos" e a operação é atômica.
+
+
+================================================================================
+ 8. PASSO 4 — SERVER ACTIONS (MUTAÇÕES)
+================================================================================
+
+Server Actions são funções marcadas com "use server" que rodam NO SERVIDOR mas
+podem ser chamadas do cliente (de um <form action={...}> ou de um onClick).
+Elas substituem as rotas de API manuais para mutações.
+
+  src/features/boards/actions.ts
+     - createBoardAction(formData): lê o título do formulário, cria o quadro,
+       revalida a home e REDIRECIONA para /board/{id}.
+     - renameBoardAction / deleteBoardAction.
+
+  src/features/kanban/actions.ts
+     - createColumnAction / renameColumnAction / deleteColumnAction
+     - createCardAction / updateCardAction / deleteCardAction
+     - reorderCardsAction(columns): persiste a ordem após o drag-and-drop.
+
+Detalhe importante — revalidatePath:
+  Depois de uma mutação, chamamos revalidatePath("/board/{id}"). Isso diz ao
+  Next.js: "os dados desta rota mudaram, recalcule o Server Component". É assim
+  que a tela reflete a criação/edição sem você gerenciar estado manualmente.
+
+  EXCEÇÃO: reorderCardsAction NÃO revalida. Porque a UI do Kanban já se
+  atualizou localmente (otimista) durante o arraste; revalidar causaria um
+  "piscar". A persistência acontece em silêncio, em segundo plano.
+
+
+================================================================================
+ 9. PASSO 5 — PÁGINAS (SERVER COMPONENTS)
+================================================================================
+
+  src/app/layout.tsx
+     Layout raiz: tag <html lang="pt-BR">, cabeçalho com o logo e o <main> que
+     envolve todas as páginas. Importa o globals.css.
+
+  src/app/page.tsx  (HOME)
+     É um Server Component async: chama listBoards() DIRETO (sem fetch HTTP),
+     pois roda no servidor. Renderiza:
+       - um <form action={createBoardAction}> (cria quadro sem JavaScript no
+         cliente — funciona até com JS desativado);
+       - a grade de quadros, cada um sendo um <Link> para /board/{id}.
+
+  src/app/board/[id]/page.tsx  (QUADRO)
+     - "[id]" é um segmento dinâmico: a URL /board/abc123 entrega params.id.
+     - Em Next.js 15, params é assíncrono: "const { id } = await params".
+     - Busca o quadro com getBoard(id); se não existir, chama notFound().
+     - Renderiza o botão "Excluir quadro" (Server Action via .bind) e o
+       componente cliente <KanbanBoard board={board} />.
+
+  src/app/not-found.tsx
+     Página 404 amigável com botão de voltar.
+
+
+================================================================================
+ 10. PASSO 6 — DRAG-AND-DROP (CLIENT COMPONENTS + DND-KIT)
+================================================================================
+
+O drag-and-drop precisa de interatividade no navegador, então estes
+componentes começam com "use client".
+
+  src/features/kanban/KanbanBoard.tsx  (o orquestrador)
+     - Recebe o quadro do servidor e copia as colunas para um ESTADO LOCAL
+       (useState). Esse estado é a "fonte de verdade" da tela enquanto você
+       interage (atualização otimista).
+     - Configura o DndContext com:
+         · sensors: PointerSensor com distância de ativação de 6px (assim um
+           clique simples não vira arraste sem querer).
+         · collisionDetection: closestCorners (boa heurística p/ listas).
+       e três handlers:
+         · onDragStart → memoriza qual cartão está sendo arrastado (para o
+           DragOverlay, a "miniatura" que segue o cursor).
+         · onDragOver  → se o cartão passou para OUTRA coluna, move-o no estado
+           local na hora (é o que dá o feedback visual fluido).
+         · onDragEnd   → reordena dentro da coluna final e PERSISTE chamando
+           reorderCardsAction com a ordem de todas as colunas.
+     - "+ Adicionar coluna": pergunta o nome (prompt), chama a Server Action e
+       recarrega para refletir a coluna nova vinda do servidor.
+
+  src/features/kanban/KanbanColumn.tsx  (a coluna)
+     - useDroppable({ id: column.id }): torna a coluna inteira uma zona de
+       soltar — essencial para conseguir soltar em uma coluna VAZIA.
+     - SortableContext com a lista de IDs dos cartões + estratégia vertical:
+       informa ao dnd-kit a ordem atual para calcular as animações.
+     - Formulário inline para adicionar cartão (Enter envia, Esc cancela).
+     - Duplo clique no título renomeia; "✕" exclui a coluna.
+
+  src/features/kanban/BoardCard.tsx  (o cartão)
+     - CardItem: a aparência do cartão (título, descrição, prazo). É reutilizada
+       no DragOverlay (a miniatura inclinada que segue o mouse).
+     - SortableCard: embrulha o CardItem com useSortable(), que devolve os
+       "handlers" e o transform/transition para o cartão se mover suavemente.
+     - "✎" edita (título/descrição via prompt); "✕" exclui o cartão.
+
+Por que ESTADO LOCAL + persistência separada?
+  Se a cada pixel arrastado fôssemos ao banco, a interface travaria. Em vez
+  disso: atualizamos a tela imediatamente (otimista) e gravamos só no fim do
+  arraste. Resultado: sensação instantânea + dados consistentes.
+
+
+================================================================================
+ 11. PASSO 7 — ESTILO E TEMA (TAILWIND V4)
+================================================================================
+
+  src/app/globals.css
+     - @import "tailwindcss";  → ativa o Tailwind (v4 não usa config.js).
+     - Variáveis CSS em :root definem a paleta (background, surface, foreground,
+       muted, border, primary).
+     - @media (prefers-color-scheme: dark) troca a paleta no modo escuro
+       automaticamente, seguindo o sistema operacional.
+     - @theme inline { --color-*: var(--*) } expõe as variáveis ao Tailwind, o
+       que permite usar classes como bg-[var(--surface)].
+     - .dragging { opacity: 0.4 } deixa o cartão "fantasma" no lugar de origem
+       enquanto o DragOverlay segue o cursor.
+
+
+================================================================================
+ 12. COMO RODAR O PROJETO (DO ZERO)
+================================================================================
+
+No terminal, dentro da pasta Kanvio:
+
+  1) Instalar dependências (já feito durante a criação):
+        npm install
+
+  2) Criar as tabelas no banco (gera prisma/dev.db):
+        npm run db:push
+
+  3) (Opcional) Popular com um quadro de exemplo:
+        npm run db:seed
+
+  4) Subir o servidor de desenvolvimento:
+        npm run dev
+
+  5) Abrir no navegador:
+        http://localhost:3000
+
+  Ferramentas úteis:
+     npm run db:studio   → abre uma UI web para ver/editar o banco.
+     npm run build       → compila para produção (checa erros de tipo/build).
+
+  Se mudar o schema.prisma, rode "npm run db:push" de novo.
+
+
+================================================================================
+ 13. COMO FUNCIONA, NA PRÁTICA, UMA AÇÃO (FLUXOS COMPLETOS)
+================================================================================
+
+A) Criar um quadro
+   1. Você digita o nome na home e envia o <form>.
+   2. O navegador chama createBoardAction (Server Action) com o FormData.
+   3. A action chama createBoard() no service → Prisma insere a linha.
+   4. revalidatePath("/") marca a home como desatualizada.
+   5. redirect("/board/{id}") leva você direto ao novo quadro.
+
+B) Adicionar um cartão
+   1. Na coluna, clica "+ Adicionar cartão", digita e tecla Enter.
+   2. createCardAction → createCard() calcula a position e insere.
+   3. revalidatePath("/board/{id}") → o Server Component re-renderiza e o
+      cartão aparece.
+
+C) Arrastar um cartão para outra coluna  (o fluxo mais rico)
+   1. onDragStart guarda o cartão ativo (para a miniatura).
+   2. Enquanto arrasta sobre outra coluna, onDragOver move o cartão no ESTADO
+      LOCAL → você vê o movimento na hora.
+   3. Ao soltar, onDragEnd ajusta a ordem final e chama reorderCardsAction com
+      a ordem de todas as colunas.
+   4. No servidor, reorderCards() reescreve columnId+position de cada cartão
+      dentro de uma transação. A tela não "pisca" porque já estava correta.
+
+D) Excluir (soft delete)
+   1. Confirma no diálogo.
+   2. A action chama delete*() que grava deletedAt = agora (não apaga a linha).
+   3. revalidatePath re-renderiza sem o item. O dado continua no banco para
+      auditoria/recuperação futura.
+
+
+================================================================================
+ 14. DECISÕES DE PROJETO E TRADE-OFFS
+================================================================================
+
+  • SQLite em dev em vez de PostgreSQL:
+      + Zero configuração, roda em qualquer máquina com Node.
+      + Troca para Postgres é só mudar o provider + DATABASE_URL.
+      - SQLite não suporta tudo que o Postgres faz (ok para o MVP).
+
+  • Server Actions em vez de API REST/NestJS:
+      + Menos código, tipagem ponta a ponta, sem rota manual.
+      + Ótimo para um app Next.js coeso.
+      - Se um dia houver apps externos (mobile nativo), aí vale uma API REST.
+
+  • Usuário "demo" automático em vez de login real:
+      + Permite usar o app imediatamente para validar o Kanban.
+      - Não há multiusuário/permissões ainda (ver Passo 15).
+
+  • Posições como inteiros reescritos no reorder:
+      + Simples e sempre consistente.
+      - Em quadros gigantes, reescrever muitas linhas custa mais. Alternativa
+        futura: posições fracionárias (ex.: 1.5 entre 1 e 2) ou LexoRank.
+
+  • prompt()/confirm() do navegador para editar/excluir:
+      + Rápido para o MVP, sem construir modais.
+      - Não combina com o visual final. Trocar por modais do Shadcn/UI depois.
+
+
+================================================================================
+ 15. O QUE FALTA PARA O MVP COMPLETO (ROADMAP)
+================================================================================
+
+Em ordem sugerida de implementação:
+
+  1) Autenticação (Auth.js / NextAuth)
+     - Adicionar provider de e-mail e (opcional) Google.
+     - Substituir ensureDemoUser/Workspace pelo usuário da sessão.
+     - Proteger as páginas e actions (verificar sessão antes de mutar).
+
+  2) Permissões (Owner / Member / Guest)
+     - Tabela de membros por workspace + checagem nas actions.
+
+  3) Comentários (já existe o modelo Comment)
+     - Service + actions + UI dentro de um modal de cartão.
+
+  4) Modal de cartão (Shadcn/UI) substituindo os prompt()/confirm()
+     - Editar título, descrição (markdown?), prazo (date picker), etiquetas.
+
+  5) Etiquetas e Checklist (modelos a adicionar ao schema).
+
+  6) Reordenar COLUNAS via drag (hoje só cartões arrastam).
+
+  7) Tempo real (Socket.IO ou Supabase Realtime)
+     - Emitir CardMoved/CardCreated/... e atualizar outros clientes.
+
+  8) Auditoria/Histórico de atividades (tabela Activity).
+
+  9) Testes (Vitest + Testing Library) e CI.
+
+ 10) Acessibilidade refinada e toasts (notificações visuais).
+
+
+================================================================================
+ 16. COMO MIGRAR DE SQLITE PARA POSTGRESQL / DEPLOY
+================================================================================
+
+  1) Em prisma/schema.prisma, troque:
+        provider = "sqlite"   →   provider = "postgresql"
+
+  2) No .env, aponte para o Postgres (Railway/Supabase/Neon):
+        DATABASE_URL="postgresql://user:senha@host:5432/kanvio?schema=public"
+
+  3) Gere e aplique a migração:
+        npx prisma migrate dev --name init    (em dev)
+        npx prisma migrate deploy             (em produção)
+
+  4) Deploy do frontend/full-stack na Vercel:
+     - Suba o repositório no GitHub e importe na Vercel.
+     - Configure a variável de ambiente DATABASE_URL no painel.
+     - A Vercel roda "npm run build" e publica.
+
+  Observação: o "npm run db:push" é ótimo em dev; em produção prefira
+  "prisma migrate" para ter histórico versionado das mudanças do banco.
+
+
+================================================================================
+ 17. GLOSSÁRIO RÁPIDO
+================================================================================
+
+  ORM            Mapeia tabelas do banco em objetos do código (aqui, Prisma).
+  Server Comp.   Componente React que roda no servidor; pode ler o banco direto.
+  Client Comp.   Componente que roda no navegador ("use client"); tem interação.
+  Server Action  Função "use server" chamável do cliente para fazer mutações.
+  Soft delete    Marcar como excluído (deletedAt) em vez de apagar de verdade.
+  Otimista       Atualizar a tela antes de o servidor confirmar (parece instantâneo).
+  Revalidate     Pedir ao Next.js para recalcular os dados de uma rota.
+  CUID           Identificador único usado como id (gerado pelo Prisma).
+  Seed           Script que popula o banco com dados iniciais de exemplo.
+
+================================================================================
+ FIM. Bons estudos e bom código! — Kanvio
+================================================================================
