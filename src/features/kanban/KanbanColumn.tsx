@@ -47,25 +47,33 @@ export function KanbanColumn({
   }
 
   return (
-    <div className="flex w-72 shrink-0 flex-col rounded-lg border border-[var(--border)] bg-[var(--surface)]">
-      <div className="flex items-center justify-between px-3 py-2">
-        <button
-          onDoubleClick={handleRename}
-          className="text-sm font-semibold"
-          title="Duplo clique para renomear"
-        >
-          {column.title}
-        </button>
+    <div className="flex max-h-[calc(100vh-12rem)] w-72 shrink-0 flex-col rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow)]">
+      <div className="flex items-center justify-between gap-2 px-3.5 py-3">
+        <div className="flex min-w-0 items-center gap-2">
+          <button
+            onDoubleClick={handleRename}
+            className="truncate text-sm font-semibold"
+            title="Duplo clique para renomear"
+          >
+            {column.title}
+          </button>
+          <span className="grid h-5 min-w-5 place-items-center rounded-full bg-[var(--surface-2)] px-1.5 text-[11px] font-medium text-[var(--muted)]">
+            {column.cards.length}
+          </span>
+        </div>
         <button
           onClick={handleDelete}
-          className="text-xs text-[var(--muted)] hover:text-red-500"
+          className="shrink-0 rounded-md px-1 text-xs text-[var(--muted)] transition hover:text-red-500"
           aria-label="Excluir coluna"
         >
           ✕
         </button>
       </div>
 
-      <div ref={setNodeRef} className="flex min-h-2 flex-col gap-2 px-3 pb-2">
+      <div
+        ref={setNodeRef}
+        className="flex min-h-2 flex-1 flex-col gap-2 overflow-y-auto px-3 pb-2"
+      >
         <SortableContext
           items={column.cards.map((c) => c.id)}
           strategy={verticalListSortingStrategy}
@@ -92,18 +100,18 @@ export function KanbanColumn({
               }}
               placeholder="Título do cartão…"
               rows={2}
-              className="w-full resize-none rounded-md border border-[var(--border)] bg-[var(--background)] px-2 py-1.5 text-sm outline-none focus:border-[var(--primary)]"
+              className="w-full resize-none rounded-xl border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2 text-sm outline-none transition focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20"
             />
             <div className="flex gap-2">
               <button
                 onClick={handleAdd}
-                className="rounded-md bg-[var(--primary)] px-3 py-1 text-xs font-medium text-white"
+                className="rounded-lg bg-gradient-to-r from-indigo-500 to-violet-500 px-3 py-1.5 text-xs font-semibold text-white shadow-md shadow-indigo-500/25 transition hover:from-indigo-400 hover:to-violet-400"
               >
                 Adicionar
               </button>
               <button
                 onClick={() => setAdding(false)}
-                className="px-2 py-1 text-xs text-[var(--muted)]"
+                className="rounded-lg px-2 py-1.5 text-xs text-[var(--muted)] transition hover:text-[var(--foreground)]"
               >
                 Cancelar
               </button>
@@ -112,7 +120,7 @@ export function KanbanColumn({
         ) : (
           <button
             onClick={() => setAdding(true)}
-            className="w-full rounded-md px-2 py-1.5 text-left text-sm text-[var(--muted)] hover:bg-[var(--background)]"
+            className="w-full rounded-lg px-2.5 py-2 text-left text-sm font-medium text-[var(--muted)] transition hover:bg-[var(--surface-2)] hover:text-[var(--foreground)]"
           >
             + Adicionar cartão
           </button>

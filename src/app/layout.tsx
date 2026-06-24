@@ -1,28 +1,25 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { Inter } from "next/font/google";
 import "./globals.css";
 
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-sans",
+  display: "swap",
+});
+
 export const metadata: Metadata = {
-  title: "Kanvio",
-  description: "Gerenciamento de projetos estilo Kanban — simples e colaborativo.",
+  title: "Kanvio — Kanban moderno e colaborativo",
+  description:
+    "Organize tarefas em quadros Kanban com uma experiência limpa e moderna. Faça login e sincronize entre todos os seus dispositivos.",
 };
 
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="pt-BR">
-      <body className="min-h-screen">
-        <header className="border-b border-[var(--border)] bg-[var(--surface)]">
-          <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
-            <Link href="/" className="text-lg font-bold tracking-tight">
-              📋 Kanvio
-            </Link>
-            <span className="text-sm text-[var(--muted)]">MVP local</span>
-          </div>
-        </header>
-        <main className="mx-auto max-w-6xl px-4 py-6">{children}</main>
-      </body>
+    <html lang="pt-BR" className={inter.variable}>
+      <body className="min-h-screen antialiased">{children}</body>
     </html>
   );
 }

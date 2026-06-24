@@ -16,6 +16,7 @@ model User {
   id        String   @id @default(cuid())
   name      String
   email     String   @unique
+  password  String? // hash bcrypt (login por e-mail/senha); nulo para contas legadas
   avatar    String?
   createdAt DateTime @default(now())
 

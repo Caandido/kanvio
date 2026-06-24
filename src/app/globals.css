@@ -1,43 +1,104 @@
 @import "tailwindcss";
 
-/* Tokens de tema (claro/escuro). O Tailwind v4 lê as variáveis via @theme. */
+/* ──────────────────────────────────────────────────────────────────────────
+   Tokens de tema (claro/escuro). O Tailwind v4 lê as variáveis via @theme.
+   Paleta: base slate fria + acento índigo/violeta para um visual sofisticado.
+   ────────────────────────────────────────────────────────────────────────── */
 :root {
-  --background: #f4f5f7;
+  --background: #f6f7fb;
   --surface: #ffffff;
-  --foreground: #172b4d;
-  --muted: #5e6c84;
-  --border: #dfe1e6;
-  --primary: #2563eb;
+  --surface-2: #f0f1f7;
+  --foreground: #1a1d29;
+  --muted: #6b7280;
+  --border: #e6e8f0;
+  --primary: #6366f1; /* indigo-500 */
+  --primary-strong: #4f46e5; /* indigo-600 */
+  --ring: rgba(99, 102, 241, 0.25);
+  --shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 8px 24px rgba(16, 24, 40, 0.06);
+  --app-gradient: radial-gradient(1200px 600px at 100% -10%, rgba(139, 92, 246, 0.1), transparent 60%),
+    radial-gradient(1000px 500px at -10% 0%, rgba(99, 102, 241, 0.1), transparent 55%);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0f1115;
-    --surface: #1b1f27;
-    --foreground: #e6e8ee;
-    --muted: #9aa4b2;
-    --border: #2b303b;
-    --primary: #3b82f6;
+    --background: #0b0d12;
+    --surface: #14171f;
+    --surface-2: #1b1f2a;
+    --foreground: #e8eaf0;
+    --muted: #8b93a7;
+    --border: #262b38;
+    --primary: #818cf8; /* indigo-400 */
+    --primary-strong: #6366f1;
+    --ring: rgba(129, 140, 248, 0.28);
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 32px rgba(0, 0, 0, 0.45);
+    --app-gradient: radial-gradient(1200px 600px at 100% -10%, rgba(139, 92, 246, 0.16), transparent 60%),
+      radial-gradient(1000px 500px at -10% 0%, rgba(99, 102, 241, 0.14), transparent 55%);
   }
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
   --color-foreground: var(--foreground);
   --color-muted: var(--muted);
   --color-border: var(--border);
   --color-primary: var(--primary);
+  --font-sans: var(--font-sans), system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 
 html,
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-family: var(--font-sans), system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+/* Fundo decorativo sutil da aplicação. */
+.app-bg {
+  background-image: var(--app-gradient);
+  background-attachment: fixed;
+}
+
+/* Header com efeito de vidro. */
+.glass {
+  background: color-mix(in srgb, var(--surface) 72%, transparent);
+  backdrop-filter: saturate(180%) blur(12px);
 }
 
 /* Estilo aplicado ao cartão enquanto está sendo arrastado. */
 .dragging {
   opacity: 0.4;
+}
+
+/* Scrollbar discreta e moderna. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+*::-webkit-scrollbar {
+  height: 10px;
+  width: 10px;
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 9999px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--muted);
+}
+
+/* Animação de entrada usada em listas/cards. */
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-in {
+  animation: fade-in-up 0.35s ease both;
 }

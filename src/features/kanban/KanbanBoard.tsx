@@ -106,7 +106,7 @@ export function KanbanBoard({ board }: { board: BoardWithColumns }) {
       cardIds: c.cards.map((card) => card.id),
     }));
     // "Fire and forget": a UI já está atualizada; persistência em segundo plano.
-    void reorderCardsAction(payload);
+    void reorderCardsAction(board.id, payload);
   }
 
   async function handleAddColumn() {
@@ -132,7 +132,7 @@ export function KanbanBoard({ board }: { board: BoardWithColumns }) {
 
         <button
           onClick={handleAddColumn}
-          className="h-12 w-72 shrink-0 rounded-lg border border-dashed border-[var(--border)] text-sm text-[var(--muted)] hover:border-[var(--primary)] hover:text-[var(--foreground)]"
+          className="h-11 w-72 shrink-0 rounded-2xl border border-dashed border-[var(--border)] text-sm font-medium text-[var(--muted)] transition hover:border-[var(--primary)] hover:bg-[var(--surface)] hover:text-[var(--foreground)]"
         >
           + Adicionar coluna
         </button>

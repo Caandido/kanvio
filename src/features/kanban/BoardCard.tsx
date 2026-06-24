@@ -38,24 +38,24 @@ export function CardItem({
   return (
     <div
       className={cn(
-        "group rounded-md border border-[var(--border)] bg-[var(--background)] p-2.5 text-sm shadow-sm",
-        overlay && "rotate-2 shadow-lg"
+        "group rounded-xl border border-[var(--border)] bg-[var(--surface-2)] p-3 text-sm shadow-sm transition hover:border-[var(--primary)]/50 hover:shadow-md",
+        overlay && "rotate-2 cursor-grabbing shadow-xl ring-2 ring-[var(--primary)]/40"
       )}
     >
       <div className="flex items-start justify-between gap-2">
-        <span className="break-words">{card.title}</span>
+        <span className="break-words leading-snug">{card.title}</span>
         {!overlay && (
-          <div className="flex shrink-0 gap-1 opacity-0 transition group-hover:opacity-100">
+          <div className="flex shrink-0 gap-1.5 opacity-0 transition group-hover:opacity-100">
             <button
               onClick={handleEdit}
-              className="text-xs text-[var(--muted)] hover:text-[var(--primary)]"
+              className="text-xs text-[var(--muted)] transition hover:text-[var(--primary)]"
               aria-label="Editar cartão"
             >
               ✎
             </button>
             <button
               onClick={handleDelete}
-              className="text-xs text-[var(--muted)] hover:text-red-500"
+              className="text-xs text-[var(--muted)] transition hover:text-red-500"
               aria-label="Excluir cartão"
             >
               ✕
@@ -65,13 +65,13 @@ export function CardItem({
       </div>
 
       {card.description && (
-        <p className="mt-1 line-clamp-2 text-xs text-[var(--muted)]">
+        <p className="mt-1.5 line-clamp-2 text-xs leading-relaxed text-[var(--muted)]">
           {card.description}
         </p>
       )}
 
       {card.dueDate && (
-        <span className="mt-2 inline-block rounded bg-[var(--border)] px-1.5 py-0.5 text-[10px] text-[var(--muted)]">
+        <span className="mt-2.5 inline-flex items-center gap-1 rounded-md bg-[var(--surface)] px-2 py-0.5 text-[10px] font-medium text-[var(--muted)]">
           📅 {formatShortDate(card.dueDate)}
         </span>
       )}

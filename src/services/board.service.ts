@@ -4,25 +4,35 @@ import type { BoardWithColumns } from "@/types";
 /**
  * Serviço de quadros: toda leitura/escrita de Board passa por aqui.
  * Mantém o acesso ao Prisma isolado dos componentes (CLAUDE.md).
+ *
+ * Tudo é escopado por `userId` (dono do workspace) — assim cada usuário só
+ * enxerga e altera os próprios quadros, e os dados sincronizam entre
+ * dispositivos pela mesma conta.
  */
 
-/** Lista os quadros não excluídos (soft delete) de forma resumida. */
-export async function listBoards() {
+/** Lista os quadros (não excluídos) que pertencem ao usuário. */
+export async function listBoards(userId: string) {
   return prisma.board.findMany({
-    where: { deletedAt: null },
+    where: { deletedAt: null, workspace: { ownerId: userId } },
     orderBy: { createdAt: "desc" },
     select: {
       id: true,
       title: true,
-      _count: { select: { columns: true } },
+      _count: { select: { columns: { where: { deletedAt: null } } } },
     },
   });
 }
 
-/** Carrega um quadro completo (colunas + cartões) já ordenado por posição. */
-export async function getBoard(boardId: string): Promise<BoardWithColumns | null> {
+/**
+ * Carrega um quadro completo (colunas + cartões) já ordenado por posição.
+ * Só retorna se o quadro pertencer ao usuário — caso contrário `null`.
+ */
+export async function getBoard(
+  boardId: string,
+  userId: string
+): Promise<BoardWithColumns | null> {
   const board = await prisma.board.findFirst({
-    where: { id: boardId, deletedAt: null },
+    where: { id: boardId, deletedAt: null, workspace: { ownerId: userId } },
     select: {
       id: true,
       title: true,
@@ -53,12 +63,9 @@ export async function getBoard(boardId: string): Promise<BoardWithColumns | null
   return board;
 }
 
-/**
- * Cria um quadro. Precisa de um workspace; para o MVP usamos/garantimos
- * um workspace e usuário "demo" padrão.
- */
-export async function createBoard(title: string) {
-  const workspace = await ensureDemoWorkspace();
+/** Cria um quadro no workspace do usuário (criando o workspace se necessário). */
+export async function createBoard(userId: string, title: string) {
+  const workspace = await ensureWorkspace(userId);
   return prisma.board.create({
     data: { title, workspaceId: workspace.id },
     select: { id: true },
@@ -77,27 +84,25 @@ export async function deleteBoard(boardId: string) {
   });
 }
 
-// ---------------------------------------------------------------------------
-// Helpers de "demo" — substituídos por autenticação real (Auth.js) no futuro.
-// ---------------------------------------------------------------------------
-
-const DEMO_EMAIL = "demo@kanvio.local";
-
-export async function ensureDemoUser() {
-  return prisma.user.upsert({
-    where: { email: DEMO_EMAIL },
-    update: {},
-    create: { name: "Usuário Demo", email: DEMO_EMAIL },
+/** Confirma que o quadro pertence ao usuário (para ações de escrita). */
+export async function userOwnsBoard(boardId: string, userId: string) {
+  const board = await prisma.board.findFirst({
+    where: { id: boardId, workspace: { ownerId: userId } },
+    select: { id: true },
   });
+  return Boolean(board);
 }
 
-export async function ensureDemoWorkspace() {
-  const user = await ensureDemoUser();
+/**
+ * Garante que o usuário tenha um workspace pessoal (o primeiro vira o padrão).
+ * Substitui o antigo "workspace demo" global agora que há login real.
+ */
+export async function ensureWorkspace(userId: string) {
   const existing = await prisma.workspace.findFirst({
-    where: { ownerId: user.id },
+    where: { ownerId: userId },
   });
   if (existing) return existing;
   return prisma.workspace.create({
-    data: { name: "Meu Workspace", ownerId: user.id },
+    data: { name: "Meu Workspace", ownerId: userId },
   });
 }

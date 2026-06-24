@@ -1,11 +1,13 @@
 import { prisma } from "@/lib/prisma";
-import { ensureDemoUser } from "./board.service";
 
 /** Serviço de cartões. */
 
-/** Cria um cartão no fim da coluna. */
-export async function createCard(columnId: string, title: string) {
-  const user = await ensureDemoUser();
+/** Cria um cartão no fim da coluna, atribuído ao autor (usuário logado). */
+export async function createCard(
+  columnId: string,
+  title: string,
+  authorId: string
+) {
   const last = await prisma.card.findFirst({
     where: { columnId, deletedAt: null },
     orderBy: { position: "desc" },
@@ -13,7 +15,7 @@ export async function createCard(columnId: string, title: string) {
   });
   const position = (last?.position ?? -1) + 1;
   return prisma.card.create({
-    data: { columnId, title, position, createdBy: user.id },
+    data: { columnId, title, position, createdBy: authorId },
   });
 }
 

@@ -9,19 +9,25 @@ Gerenciador de projetos estilo Kanban (inspirado no Trello), feito com
 > completa da arquitetura e de cada arquivo do código.
 
 ## Funcionalidades atuais
+- **Login por e-mail e senha** (Auth.js / NextAuth) — cada conta tem seus
+  próprios quadros, **sincronizados entre dispositivos**
 - Criar / abrir / excluir (soft delete) quadros
 - Criar, renomear (duplo clique) e excluir colunas
 - Criar, editar (✎) e excluir (✕) cartões
 - **Arrastar e soltar** cartões: reordenar e mover entre colunas (persistido)
-- Tema claro/escuro automático
+- Visual moderno (paleta índigo/violeta, header glass) e tema claro/escuro automático
 
 ## Como rodar
 ```bash
 npm install        # dependências
-npm run db:push    # cria as tabelas (SQLite: prisma/dev.db)
-npm run db:seed    # (opcional) quadro de exemplo
+# .env precisa de DATABASE_URL (PostgreSQL) e AUTH_SECRET
+#   AUTH_SECRET: gere com  npx auth secret  (ou openssl rand -base64 32)
+npm run db:push    # cria as tabelas no PostgreSQL
+npm run db:seed    # (opcional) conta demo + quadro de exemplo
 npm run dev        # http://localhost:3000
 ```
+
+> Conta demo do seed: **demo@kanvio.local** / senha **demo123**.
 
 ## Scripts
 | Comando            | O que faz                                  |
@@ -33,8 +39,9 @@ npm run dev        # http://localhost:3000
 | `npm run db:studio`| UI visual do banco (Prisma Studio)         |
 
 ## Stack
-Next.js 15 · React 19 · TypeScript (strict) · Tailwind v4 · Prisma 6 ·
-@dnd-kit · SQLite (dev) / PostgreSQL (prod)
+Next.js 16 · React 19 · TypeScript (strict) · Tailwind v4 · Prisma 6 ·
+Auth.js (NextAuth v5) · @dnd-kit · PostgreSQL (Neon)
 
-Banco em dev é **SQLite** (zero config). Para produção, troque o `provider`
-no `prisma/schema.prisma` para `postgresql` — detalhes no passo a passo.
+Banco em dev e produção é **PostgreSQL** (Neon). A autenticação usa
+**Auth.js** com provider de credenciais (e-mail + senha, hash bcrypt) e
+sessão em JWT.

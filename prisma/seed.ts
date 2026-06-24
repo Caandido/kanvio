@@ -1,16 +1,20 @@
 import { PrismaClient } from "@prisma/client";
+import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
 
 /**
  * Popula o banco com um quadro de exemplo para você ver a app funcionando.
  * Roda com: npm run db:seed
+ *
+ * Cria uma conta demo logável → e-mail: demo@kanvio.local / senha: demo123
  */
 async function main() {
+  const password = await bcrypt.hash("demo123", 10);
   const user = await prisma.user.upsert({
     where: { email: "demo@kanvio.local" },
-    update: {},
-    create: { name: "Usuário Demo", email: "demo@kanvio.local" },
+    update: { password },
+    create: { name: "Usuário Demo", email: "demo@kanvio.local", password },
   });
 
   const workspace =
