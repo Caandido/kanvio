@@ -6,15 +6,9 @@ import { requireUserId } from "@/lib/session";
 // A home consulta o banco por usuário → renderiza sob demanda (nunca em build).
 export const dynamic = "force-dynamic";
 
-// Pequena variação de gradiente por cartão, para o grid não ficar monótono.
-const ACCENTS = [
-  "from-indigo-500 to-violet-500",
-  "from-sky-500 to-cyan-500",
-  "from-fuchsia-500 to-pink-500",
-  "from-emerald-500 to-teal-500",
-  "from-amber-500 to-orange-500",
-  "from-rose-500 to-red-500",
-];
+// Variação sutil de opacidade na faixa monocromática do topo de cada cartão,
+// dando ritmo ao grid sem sair do preto & branco.
+const ACCENTS = [1, 0.7, 0.45, 0.85, 0.55, 0.32];
 
 export default async function HomePage() {
   const userId = await requireUserId();
@@ -39,11 +33,11 @@ export default async function HomePage() {
           name="title"
           placeholder="Nome do novo quadro…"
           required
-          className="h-11 flex-1 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 text-sm outline-none transition placeholder:text-[var(--muted)] focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20"
+          className="focus-ring h-11 flex-1 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 text-sm outline-none transition placeholder:text-[var(--muted)]"
         />
         <button
           type="submit"
-          className="inline-flex h-11 items-center justify-center rounded-xl bg-gradient-to-r from-indigo-500 to-violet-500 px-5 text-sm font-semibold text-white shadow-lg shadow-indigo-500/25 transition hover:from-indigo-400 hover:to-violet-400"
+          className="btn-primary inline-flex h-11 items-center justify-center rounded-xl px-5 text-sm font-semibold"
         >
           Criar quadro
         </button>
@@ -51,7 +45,7 @@ export default async function HomePage() {
 
       {boards.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-[var(--border)] bg-[var(--surface)] px-6 py-16 text-center">
-          <div className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-500 text-xl text-white shadow-lg shadow-indigo-500/30">
+          <div className="ink-mark mx-auto mb-4 grid h-12 w-12 place-items-center rounded-2xl text-xl shadow-[var(--shadow)]">
             ✦
           </div>
           <p className="font-medium">Nenhum quadro ainda</p>
@@ -68,9 +62,8 @@ export default async function HomePage() {
                 className="group block overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow)] transition hover:-translate-y-0.5 hover:border-[var(--primary)]"
               >
                 <div
-                  className={`h-1.5 w-full bg-gradient-to-r ${
-                    ACCENTS[i % ACCENTS.length]
-                  }`}
+                  className="h-1 w-full bg-[var(--foreground)]"
+                  style={{ opacity: ACCENTS[i % ACCENTS.length] }}
                 />
                 <div className="p-5">
                   <span className="block truncate font-semibold transition group-hover:text-[var(--primary)]">

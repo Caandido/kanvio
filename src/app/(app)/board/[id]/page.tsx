@@ -37,7 +37,7 @@ export default async function BoardPage({
         <form action={deleteBoardAction.bind(null, board.id)}>
           <button
             type="submit"
-            className="rounded-lg border border-[var(--border)] px-3 py-1.5 text-sm text-[var(--muted)] transition hover:border-red-400 hover:text-red-500"
+            className="rounded-lg border border-[var(--border)] px-3 py-1.5 text-sm text-[var(--muted)] transition hover:border-[var(--foreground)] hover:text-[var(--foreground)]"
           >
             Excluir quadro
           </button>

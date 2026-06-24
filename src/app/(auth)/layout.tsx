@@ -18,7 +18,7 @@ export default async function AuthLayout({
         href="/"
         className="mb-8 inline-flex items-center gap-2 text-xl font-bold tracking-tight"
       >
-        <span className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-indigo-500 to-violet-500 text-white shadow-lg shadow-indigo-500/30">
+        <span className="ink-mark grid h-9 w-9 place-items-center rounded-xl text-sm font-bold shadow-[var(--shadow)]">
           K
         </span>
         Kanvio

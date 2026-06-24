@@ -63,7 +63,7 @@ export function KanbanColumn({
         </div>
         <button
           onClick={handleDelete}
-          className="shrink-0 rounded-md px-1 text-xs text-[var(--muted)] transition hover:text-red-500"
+          className="shrink-0 rounded-md px-1 text-xs text-[var(--muted)] transition hover:text-[var(--foreground)]"
           aria-label="Excluir coluna"
         >
           ✕
@@ -100,12 +100,12 @@ export function KanbanColumn({
               }}
               placeholder="Título do cartão…"
               rows={2}
-              className="w-full resize-none rounded-xl border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2 text-sm outline-none transition focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20"
+              className="focus-ring w-full resize-none rounded-xl border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2 text-sm outline-none transition"
             />
             <div className="flex gap-2">
               <button
                 onClick={handleAdd}
-                className="rounded-lg bg-gradient-to-r from-indigo-500 to-violet-500 px-3 py-1.5 text-xs font-semibold text-white shadow-md shadow-indigo-500/25 transition hover:from-indigo-400 hover:to-violet-400"
+                className="btn-primary rounded-lg px-3 py-1.5 text-xs font-semibold"
               >
                 Adicionar
               </button>

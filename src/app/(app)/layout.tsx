@@ -22,7 +22,7 @@ export default async function AppLayout({
             href="/"
             className="inline-flex items-center gap-2 text-lg font-bold tracking-tight"
           >
-            <span className="grid h-8 w-8 place-items-center rounded-lg bg-gradient-to-br from-indigo-500 to-violet-500 text-sm text-white shadow-md shadow-indigo-500/30">
+            <span className="ink-mark grid h-8 w-8 place-items-center rounded-lg text-sm font-bold shadow-[var(--shadow)]">
               K
             </span>
             Kanvio

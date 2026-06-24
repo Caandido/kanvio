@@ -1,38 +1,39 @@
 @import "tailwindcss";
 
 /* ──────────────────────────────────────────────────────────────────────────
-   Tokens de tema (claro/escuro). O Tailwind v4 lê as variáveis via @theme.
-   Paleta: base slate fria + acento índigo/violeta para um visual sofisticado.
+   Tokens de tema — paleta monocromática (preto & branco) sofisticada.
+   O acento (--primary) é preto no claro e branco no escuro: alto contraste,
+   atemporal. O Tailwind v4 lê as variáveis via @theme.
    ────────────────────────────────────────────────────────────────────────── */
 :root {
-  --background: #f6f7fb;
+  --background: #fafafa;
   --surface: #ffffff;
-  --surface-2: #f0f1f7;
-  --foreground: #1a1d29;
-  --muted: #6b7280;
-  --border: #e6e8f0;
-  --primary: #6366f1; /* indigo-500 */
-  --primary-strong: #4f46e5; /* indigo-600 */
-  --ring: rgba(99, 102, 241, 0.25);
-  --shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 8px 24px rgba(16, 24, 40, 0.06);
-  --app-gradient: radial-gradient(1200px 600px at 100% -10%, rgba(139, 92, 246, 0.1), transparent 60%),
-    radial-gradient(1000px 500px at -10% 0%, rgba(99, 102, 241, 0.1), transparent 55%);
+  --surface-2: #f4f4f5;
+  --foreground: #0a0a0a;
+  --muted: #71717a;
+  --border: #e7e7ea;
+  --primary: #0a0a0a; /* tinta principal (preto) */
+  --primary-foreground: #ffffff; /* texto sobre a tinta */
+  --ring: rgba(10, 10, 10, 0.12);
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 12px 32px rgba(0, 0, 0, 0.06);
+  --app-gradient: radial-gradient(1100px 520px at 100% -10%, rgba(0, 0, 0, 0.05), transparent 60%),
+    radial-gradient(900px 480px at -10% 0%, rgba(0, 0, 0, 0.04), transparent 55%);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0b0d12;
-    --surface: #14171f;
-    --surface-2: #1b1f2a;
-    --foreground: #e8eaf0;
-    --muted: #8b93a7;
-    --border: #262b38;
-    --primary: #818cf8; /* indigo-400 */
-    --primary-strong: #6366f1;
-    --ring: rgba(129, 140, 248, 0.28);
-    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 32px rgba(0, 0, 0, 0.45);
-    --app-gradient: radial-gradient(1200px 600px at 100% -10%, rgba(139, 92, 246, 0.16), transparent 60%),
-      radial-gradient(1000px 500px at -10% 0%, rgba(99, 102, 241, 0.14), transparent 55%);
+    --background: #000000;
+    --surface: #0c0c0d;
+    --surface-2: #161618;
+    --foreground: #fafafa;
+    --muted: #a1a1aa;
+    --border: #242427;
+    --primary: #fafafa; /* tinta principal (branco) */
+    --primary-foreground: #0a0a0a;
+    --ring: rgba(250, 250, 250, 0.16);
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.5), 0 16px 40px rgba(0, 0, 0, 0.6);
+    --app-gradient: radial-gradient(1100px 520px at 100% -10%, rgba(255, 255, 255, 0.06), transparent 60%),
+      radial-gradient(900px 480px at -10% 0%, rgba(255, 255, 255, 0.04), transparent 55%);
   }
 }
 
@@ -44,6 +45,7 @@
   --color-muted: var(--muted);
   --color-border: var(--border);
   --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
   --font-sans: var(--font-sans), system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 
@@ -52,6 +54,8 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), system-ui, -apple-system, "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 /* Fundo decorativo sutil da aplicação. */
@@ -62,8 +66,43 @@ body {
 
 /* Header com efeito de vidro. */
 .glass {
-  background: color-mix(in srgb, var(--surface) 72%, transparent);
-  backdrop-filter: saturate(180%) blur(12px);
+  background: color-mix(in srgb, var(--surface) 70%, transparent);
+  backdrop-filter: saturate(160%) blur(14px);
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   Componentes reutilizáveis (definidos em CSS para inverterem com o tema).
+   ────────────────────────────────────────────────────────────────────────── */
+
+/* Marca/ícone "K" — quadrado de tinta com a letra vazada. */
+.ink-mark {
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+
+/* Botão primário monocromático (tinta sólida) com leve brilho no topo. */
+.btn-primary {
+  background: var(--primary);
+  color: var(--primary-foreground);
+  box-shadow: var(--shadow);
+  transition: transform 0.15s ease, opacity 0.15s ease, box-shadow 0.15s ease;
+}
+.btn-primary:hover {
+  opacity: 0.9;
+}
+.btn-primary:active {
+  transform: translateY(1px);
+}
+.btn-primary:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+/* Foco acessível consistente em inputs. */
+.focus-ring:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--ring);
+  outline: none;
 }
 
 /* Estilo aplicado ao cartão enquanto está sendo arrastado. */
@@ -71,7 +110,7 @@ body {
   opacity: 0.4;
 }
 
-/* Scrollbar discreta e moderna. */
+/* Scrollbar discreta. */
 * {
   scrollbar-width: thin;
   scrollbar-color: var(--border) transparent;
@@ -88,7 +127,7 @@ body {
   background: var(--muted);
 }
 
-/* Animação de entrada usada em listas/cards. */
+/* Animação de entrada. */
 @keyframes fade-in-up {
   from {
     opacity: 0;

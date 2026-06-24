@@ -11,7 +11,7 @@ function SubmitButton({ label }: { label: string }) {
     <button
       type="submit"
       disabled={pending}
-      className="mt-2 inline-flex h-11 w-full items-center justify-center rounded-xl bg-gradient-to-r from-indigo-500 to-violet-500 text-sm font-semibold text-white shadow-lg shadow-indigo-500/25 transition hover:from-indigo-400 hover:to-violet-400 disabled:cursor-not-allowed disabled:opacity-60"
+      className="btn-primary mt-2 inline-flex h-11 w-full items-center justify-center rounded-xl text-sm font-semibold"
     >
       {pending ? "Aguarde…" : label}
     </button>
@@ -19,7 +19,7 @@ function SubmitButton({ label }: { label: string }) {
 }
 
 const inputClass =
-  "h-11 w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3.5 text-sm outline-none transition placeholder:text-[var(--muted)] focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20";
+  "focus-ring h-11 w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3.5 text-sm outline-none transition placeholder:text-[var(--muted)]";
 
 export function AuthForm({ mode }: { mode: "login" | "register" }) {
   const action = mode === "login" ? loginAction : registerAction;
@@ -78,7 +78,8 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
       </div>
 
       {state?.error && (
-        <p className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-500">
+        <p className="flex items-start gap-2 rounded-lg border border-[var(--foreground)]/25 bg-[var(--surface-2)] px-3 py-2 text-sm text-[var(--foreground)]">
+          <span aria-hidden className="mt-px font-bold">!</span>
           {state.error}
         </p>
       )}

@@ -55,7 +55,7 @@ export function CardItem({
             </button>
             <button
               onClick={handleDelete}
-              className="text-xs text-[var(--muted)] transition hover:text-red-500"
+              className="text-xs text-[var(--muted)] transition hover:text-[var(--foreground)]"
               aria-label="Excluir cartão"
             >
               ✕
