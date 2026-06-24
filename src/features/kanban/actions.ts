@@ -11,7 +11,14 @@ import {
   updateCard,
   deleteCard,
   reorderCards,
+  userOwnsCard,
 } from "@/services/card.service";
+import {
+  addAttachment,
+  deleteAttachment,
+  getAttachmentCardId,
+  MAX_ATTACHMENT_BYTES,
+} from "@/services/attachment.service";
 import { userOwnsBoard } from "@/services/board.service";
 import { requireUserId } from "@/lib/session";
 
@@ -76,6 +83,44 @@ export async function updateCardAction(
 export async function deleteCardAction(boardId: string, cardId: string) {
   await assertOwner(boardId);
   await deleteCard(cardId);
+  revalidatePath(`/board/${boardId}`);
+}
+
+// ---- Anexos (imagens/arquivos) ----
+export async function addAttachmentAction(
+  boardId: string,
+  cardId: string,
+  file: { name: string; type: string; url: string; size: number }
+) {
+  const userId = await assertOwner(boardId);
+  if (!(await userOwnsCard(cardId, userId))) {
+    throw new Error("Cartão não pertence a este quadro.");
+  }
+  if (!file.url.startsWith("data:")) {
+    throw new Error("Anexo inválido.");
+  }
+  if (file.size > MAX_ATTACHMENT_BYTES) {
+    throw new Error("Arquivo muito grande (máx. 3 MB).");
+  }
+  await addAttachment(cardId, {
+    name: file.name.slice(0, 200),
+    type: file.type || "application/octet-stream",
+    url: file.url,
+    size: file.size,
+  });
+  revalidatePath(`/board/${boardId}`);
+}
+
+export async function deleteAttachmentAction(
+  boardId: string,
+  attachmentId: string
+) {
+  const userId = await assertOwner(boardId);
+  const cardId = await getAttachmentCardId(attachmentId);
+  if (!cardId || !(await userOwnsCard(cardId, userId))) {
+    throw new Error("Anexo não encontrado.");
+  }
+  await deleteAttachment(attachmentId);
   revalidatePath(`/board/${boardId}`);
 }
 

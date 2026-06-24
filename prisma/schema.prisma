@@ -70,11 +70,26 @@ model Card {
   createdAt   DateTime  @default(now())
   deletedAt   DateTime?
 
-  column   Column    @relation(fields: [columnId], references: [id], onDelete: Cascade)
-  author   User      @relation("CardAuthor", fields: [createdBy], references: [id])
-  comments Comment[]
+  column      Column       @relation(fields: [columnId], references: [id], onDelete: Cascade)
+  author      User         @relation("CardAuthor", fields: [createdBy], references: [id])
+  comments    Comment[]
+  attachments Attachment[]
 
   @@index([columnId])
+}
+
+model Attachment {
+  id        String   @id @default(cuid())
+  cardId    String
+  name      String
+  type      String // mime type (ex.: image/png, application/pdf)
+  url       String // data URL base64 (armazenado inline — sem storage externo)
+  size      Int // bytes
+  createdAt DateTime @default(now())
+
+  card Card @relation(fields: [cardId], references: [id], onDelete: Cascade)
+
+  @@index([cardId])
 }
 
 model Comment {

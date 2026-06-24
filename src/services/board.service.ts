@@ -53,6 +53,16 @@ export async function getBoard(
               position: true,
               columnId: true,
               dueDate: true,
+              attachments: {
+                orderBy: { createdAt: "asc" },
+                select: {
+                  id: true,
+                  name: true,
+                  type: true,
+                  url: true,
+                  size: true,
+                },
+              },
             },
           },
         },

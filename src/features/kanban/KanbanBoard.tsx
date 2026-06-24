@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   DndContext,
   DragOverlay,
@@ -19,9 +19,16 @@ import { KanbanColumn } from "./KanbanColumn";
 import { CardItem } from "./BoardCard";
 
 export function KanbanBoard({ board }: { board: BoardWithColumns }) {
-  // Estado local = fonte de verdade da UI durante o uso (otimista).
+  // Estado local = fonte de verdade da UI durante o drag (otimista).
   const [columns, setColumns] = useState<ColumnWithCards[]>(board.columns);
   const [activeCard, setActiveCard] = useState<CardDTO | null>(null);
+
+  // Ressincroniza quando o servidor revalida (criar/editar cartão, anexos…).
+  // Durante interações puramente locais (drag) o `board` mantém a mesma
+  // referência, então este efeito não dispara e não atropela o estado otimista.
+  useEffect(() => {
+    setColumns(board.columns);
+  }, [board]);
 
   // Exige mover 6px antes de iniciar o drag — evita conflito com cliques.
   const sensors = useSensors(
@@ -112,9 +119,8 @@ export function KanbanBoard({ board }: { board: BoardWithColumns }) {
   async function handleAddColumn() {
     const title = window.prompt("Nome da nova coluna:");
     if (!title?.trim()) return;
+    // A revalidação no servidor atualiza `board`, e o useEffect ressincroniza.
     await createColumnAction(board.id, title.trim());
-    // Recarrega para refletir a nova coluna vinda do servidor.
-    window.location.reload();
   }
 
   return (

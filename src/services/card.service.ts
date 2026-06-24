@@ -33,6 +33,15 @@ export async function deleteCard(cardId: string) {
   });
 }
 
+/** Confirma que o cartão pertence a um quadro do usuário (segue até o dono do workspace). */
+export async function userOwnsCard(cardId: string, userId: string) {
+  const card = await prisma.card.findFirst({
+    where: { id: cardId, column: { board: { workspace: { ownerId: userId } } } },
+    select: { id: true },
+  });
+  return Boolean(card);
+}
+
 /**
  * Persiste a nova ordenação após um drag-and-drop.
  *
